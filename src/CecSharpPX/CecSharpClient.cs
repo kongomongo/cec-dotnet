@@ -36,14 +36,37 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Windows.Forms;
 using CecSharp;
 
 namespace CecSharpClient
 {
   class CecSharpClient : CecCallbackMethods
   {
+    [DllImport("kernel32.dll", EntryPoint = "GetStdHandle", SetLastError = true, CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+    public static extern IntPtr GetStdHandle(int nStdHandle);
+
+    [DllImport("kernel32.dll", EntryPoint = "AllocConsole", SetLastError = true, CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+    public static extern int AllocConsole();
+    
+    [DllImport("kernel32.dll")]
+    static extern IntPtr GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    
+    [DllImport("User32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr handle);
+    
+    private const int STD_OUTPUT_HANDLE = -11;
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+
     public CecSharpClient()
     {
       Config = new LibCECConfiguration();
@@ -454,39 +477,28 @@ namespace CecSharpClient
 
     static void Main(string[] args)
     {
+      // Start with disabled console
+      ToggleConsoleVisibility();
+      SetupNotifyIcon();
+
       CecSharpClient p = new CecSharpClient();
       if (p.Connect(10000))
       {
-        if (p.Lib.IsActiveDevice(CecLogicalAddress.Tv))
-        {
-          int tvVendorId = (int)p.Lib.GetDeviceVendorId(CecLogicalAddress.Tv);
-          Console.WriteLine("tvVendorId " + tvVendorId);
-        }
+        DebugInfo(p);
 
-        bool hasAVRDevice = p.Lib.IsActiveDevice(CecLogicalAddress.AudioSystem);
-
-        if (hasAVRDevice)
-        {
-          int avrVendorId = (int)p.Lib.GetDeviceVendorId(CecLogicalAddress.AudioSystem);
-          Console.WriteLine("avrVendorId " + avrVendorId);
-        }
-
-        var activeDevices = p.Lib.GetActiveDevices();
-        List<string> deviceList = new List<string>();
-        foreach (var activeDevice in activeDevices.Addresses)
-        {
-          if (activeDevice != CecLogicalAddress.Unknown)
-            deviceList.Add(string.Format("{0,1:X} : {1}", (int)activeDevice, p.Lib.ToString(activeDevice)));
-        }
-        deviceList.Add(string.Format("{0,1:X} : {1}", (int)CecLogicalAddress.Broadcast, p.Lib.ToString(CecLogicalAddress.Broadcast)));
-        
         new Thread(() =>
         {
           Thread.CurrentThread.IsBackground = true;
           SuspendWhenKodiActive(p);
         }).Start();
 
-        p.MainLoop();
+        new Thread(() =>
+        {
+          Thread.CurrentThread.IsBackground = false;
+          p.MainLoop();
+        }).Start();
+
+        Application.Run();
       }
       else
       {
@@ -494,6 +506,61 @@ namespace CecSharpClient
       }
     }
 
+    private static void DebugInfo(CecSharpClient p)
+    {
+      if (p.Lib.IsActiveDevice(CecLogicalAddress.Tv))
+      {
+        int tvVendorId = (int)p.Lib.GetDeviceVendorId(CecLogicalAddress.Tv);
+        Console.WriteLine("tvVendorId " + tvVendorId);
+      }
+
+      bool hasAVRDevice = p.Lib.IsActiveDevice(CecLogicalAddress.AudioSystem);
+
+      if (hasAVRDevice)
+      {
+        int avrVendorId = (int)p.Lib.GetDeviceVendorId(CecLogicalAddress.AudioSystem);
+        Console.WriteLine("avrVendorId " + avrVendorId);
+      }
+
+      Console.WriteLine("Active Devices:");
+      var activeDevices = p.Lib.GetActiveDevices();
+      foreach (var activeDevice in activeDevices.Addresses)
+      {
+        if (activeDevice != CecLogicalAddress.Unknown)
+          Console.WriteLine(string.Format("{0,1:X} : {1}", (int)activeDevice, p.Lib.ToString(activeDevice)));
+      }
+      Console.WriteLine(string.Format("{0,1:X} : {1}", (int)CecLogicalAddress.Broadcast, p.Lib.ToString(CecLogicalAddress.Broadcast)));
+    }
+
+    private static NotifyIcon _trayIcon; 
+
+    private static void SetupNotifyIcon()
+    {
+      _trayIcon = new NotifyIcon();
+      _trayIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+      _trayIcon.Text = "CecSharpPX";
+      _trayIcon.Click += NotifyIconInteracted;
+      _trayIcon.Visible = true;
+    }
+
+    static void NotifyIconInteracted(object sender, EventArgs e)
+    {
+      ToggleConsoleVisibility();
+    }
+
+    private static bool _consoleVisible = true;
+
+    private static void ToggleConsoleVisibility()
+    {
+      var handle = GetConsoleWindow();
+
+      ShowWindow(handle, _consoleVisible ? SW_HIDE : SW_SHOW);
+      _consoleVisible = !_consoleVisible;
+
+      if (_consoleVisible)
+        SetForegroundWindow(handle);
+    }
+   
     private static void SuspendWhenKodiActive(CecSharpClient client)
     {
       while (true)
