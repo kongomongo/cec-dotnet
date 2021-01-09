@@ -123,9 +123,93 @@ namespace CecSharpClient
           case CecUserControlCode.F1Blue:
             StartKodi();
             break;
+          //case CecUserControlCode.F2Red:
           case CecUserControlCode.F3Green:
             StartSteamBP();
             break;
+          //case CecUserControlCode.F4Yellow:
+          case CecUserControlCode.Select:
+            keyCode = WindowsAPI.VirtualKeyCode.VK_RETURN;
+            break;
+          case CecUserControlCode.Power:
+            ShutdownComputer();
+            break;
+          case CecUserControlCode.RootMenu: // Home
+            Type shellType = Type.GetTypeFromProgID("Shell.Application");
+            dynamic shellInst = Activator.CreateInstance(shellType);
+            shellInst.ToggleDesktop();
+            break;
+          case CecUserControlCode.ContentsMenu: // Menü
+            break;
+          case CecUserControlCode.DisplayInformation: // Info
+            break;
+          case (CecUserControlCode)17: // Titel
+            break;
+          case CecUserControlCode.Backward:
+          case CecUserControlCode.Play:
+          case CecUserControlCode.Pause:
+          case CecUserControlCode.Forward:
+          case CecUserControlCode.Exit:
+            break;
+            //currently unmapped
+            //case CecUserControlCode.SamsungReturn:
+            //case CecUserControlCode.SetupMenu:
+            //case CecUserControlCode.FavoriteMenu:
+            //case CecUserControlCode.Number0:
+            //case CecUserControlCode.Number1:
+            //case CecUserControlCode.Number2:
+            //case CecUserControlCode.Number3:
+            //case CecUserControlCode.Number4:
+            //case CecUserControlCode.Number5:
+            //case CecUserControlCode.Number6:
+            //case CecUserControlCode.Number7:
+            //case CecUserControlCode.Number8:
+            //case CecUserControlCode.Number9:
+            //case CecUserControlCode.Dot:
+            //case CecUserControlCode.Enter:
+            //case CecUserControlCode.Clear:
+            //case CecUserControlCode.ChannelUp:
+            //case CecUserControlCode.PageUp:
+            //case CecUserControlCode.ChannelDown:
+            //case CecUserControlCode.PageDown:
+            //case CecUserControlCode.VolumeUp:
+            //case CecUserControlCode.VolumeDown:
+            //case CecUserControlCode.Mute:
+            //case CecUserControlCode.MuteFunction:
+            //case CecUserControlCode.PlayFunction:
+            //case CecUserControlCode.PausePlayFunction:
+            //case CecUserControlCode.PauseRecord:
+            //case CecUserControlCode.PauseRecordFunction:
+            //case CecUserControlCode.Stop:
+            //case CecUserControlCode.StopFunction:
+            //case CecUserControlCode.StopRecord:
+            //case CecUserControlCode.Rewind:
+            //case CecUserControlCode.FastForward:
+            //case CecUserControlCode.RightUp:
+            //case CecUserControlCode.LeftUp:
+            //case CecUserControlCode.RightDown:
+            //case CecUserControlCode.LeftDown:
+            //case CecUserControlCode.NextFavorite:
+            //case CecUserControlCode.PreviousChannel:
+            //case CecUserControlCode.SoundSelect:
+            //case CecUserControlCode.InputSelect:
+            //case CecUserControlCode.DisplayInformation:
+            //case CecUserControlCode.Help:
+            //case CecUserControlCode.Record:
+            //case CecUserControlCode.Eject:
+            //case CecUserControlCode.Angle:
+            //case CecUserControlCode.SubPicture:
+            //case CecUserControlCode.VideoOnDemand:
+            //case CecUserControlCode.ElectronicProgramGuide:
+            //case CecUserControlCode.TimerProgramming:
+            //case CecUserControlCode.RecordFunction:
+            //case CecUserControlCode.RestoreVolumeFunction:
+            //case CecUserControlCode.TuneFunction:
+            //case CecUserControlCode.SelectMediaFunction:
+            //case CecUserControlCode.SelectAVInputFunction:
+            //case CecUserControlCode.SelectAudioInputFunction:
+            //case CecUserControlCode.Data:
+
         }
 
         if (keyCode.HasValue)
@@ -138,6 +222,11 @@ namespace CecSharpClient
         }
       }
       return 1;
+    }
+
+    private static void ShutdownComputer()
+    {
+      Process.Start("shutdown", "/s /t 0");
     }
 
     private void StartSteamBP()
