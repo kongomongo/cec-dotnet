@@ -128,7 +128,7 @@ namespace CecSharpClient
             StartProgram(@"C:\Users\PX\Desktop", @"bigpicture.bat");
             break;
           case CecUserControlCode.F4Yellow:
-            StartProgram(@"C:\Program Files (x86)\Fraps", "fraps.exe");
+            ToggleProgram(@"C:\Program Files (x86)\Fraps", "fraps.exe");
             break;
           case CecUserControlCode.Select:
             keyCode = WindowsAPI.VirtualKeyCode.VK_RETURN;
@@ -251,6 +251,31 @@ namespace CecSharpClient
       }
     }
 
+    private static void ToggleProgram(string workingDirectory, string fileName, string cmdLineArgs = null)
+    {
+      string processName = Path.GetFileNameWithoutExtension(fileName);
+
+      if (IsRunning(processName))
+      {
+        foreach (var process in Process.GetProcessesByName(processName))
+        {
+          Console.WriteLine(@"Ending Process: '{0}'", process.Id);
+          bool didClose = false;
+          if (process.CloseMainWindow())
+          {
+            if (!process.WaitForExit(1000))
+              Console.WriteLine("Process did not end in time");
+            else
+              didClose = true;
+          }
+          if (!didClose || !process.HasExited)
+            Console.WriteLine(@"Killing Process: '{0}'", process.Id);
+            process.Kill();
+        }
+      }
+      else
+        StartProgram(workingDirectory, fileName, cmdLineArgs);
+    }
     private void StartKodi()
     {
       if (IsRunning("kodi"))
