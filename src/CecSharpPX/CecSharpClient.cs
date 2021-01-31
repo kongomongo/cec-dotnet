@@ -125,9 +125,11 @@ namespace CecSharpClient
             break;
           //case CecUserControlCode.F2Red:
           case CecUserControlCode.F3Green:
-            StartSteamBP();
+            StartProgram(@"C:\Users\PX\Desktop", @"bigpicture.bat");
             break;
-          //case CecUserControlCode.F4Yellow:
+          case CecUserControlCode.F4Yellow:
+            StartProgram(@"C:\Program Files (x86)\Fraps", "fraps.exe");
+            break;
           case CecUserControlCode.Select:
             keyCode = WindowsAPI.VirtualKeyCode.VK_RETURN;
             break;
@@ -229,20 +231,23 @@ namespace CecSharpClient
       Process.Start("shutdown", "/s /t 0");
     }
 
-    private void StartSteamBP()
+    private static void StartProgram(string workingDirectory, string fileName, string cmdLineArgs = null)
     {
-      using (
-        Process runningProcess = new Process
-        {
-          StartInfo =
-            {
-                WorkingDirectory = @"C:\Users\PX\Desktop",
-                FileName = @"bigpicture.bat"
-            }
-        })
+      Process p = new Process();
+      ProcessStartInfo si = new ProcessStartInfo(fileName);
+      si.WorkingDirectory = workingDirectory;
+      if (cmdLineArgs != null)
+        si.Arguments = cmdLineArgs;
+      p.StartInfo = si;
+      Console.WriteLine(@"Starting Process with '{0}\{1}' '{2}'", workingDirectory, fileName, cmdLineArgs);
+      try
       {
-        Console.WriteLine(@"Starting Kodi with '{0}\{1}'", runningProcess.StartInfo.WorkingDirectory, runningProcess.StartInfo.FileName);
-        runningProcess.Start();
+        if (!p.Start())
+          Console.WriteLine("Process not started!");
+      }
+      catch (Exception e)
+      { 
+        Console.WriteLine(@"Error starting Process: '{0}'", e.ToString());
       }
     }
 
@@ -255,19 +260,7 @@ namespace CecSharpClient
         return;
       }
 
-      using (
-        Process runningProcess = new Process
-        {
-          StartInfo =
-            {
-                WorkingDirectory = @"C:\Program Files\Kodi",
-                FileName = @"kodi.exe"
-            }
-        })
-      {
-        Console.WriteLine(@"Starting Kodi with '{0}\{1}'", runningProcess.StartInfo.WorkingDirectory, runningProcess.StartInfo.FileName);
-        runningProcess.Start();
-      }
+      StartProgram(@"C:\Program Files\Kodi", @"kodi.exe");
     }
 
     private void SetForeground(string processName)
