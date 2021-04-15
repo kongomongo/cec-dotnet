@@ -38,6 +38,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -430,6 +431,8 @@ namespace CecSharpClient
               "[log] {1 - 31}            change the log level. see cectypes.h for values." + Environment.NewLine +
               "[ping]                    send a ping command to the CEC adapter." + Environment.NewLine +
               "[bl]                      to let the adapter enter the bootloader, to upgrade" + Environment.NewLine +
+              "[v+] [num]                send volume up (optional: by num)" + Environment.NewLine +
+              "[v-] [num]                send volume down (optional: by num)" + Environment.NewLine +
               "                          the flash rom." + Environment.NewLine +
               "[r]                       reconnect to the CEC adapter." + Environment.NewLine +
               "[h] or [help]             show this help." + Environment.NewLine +
@@ -526,6 +529,24 @@ namespace CecSharpClient
                 else if (splitCommand[0] == "bl")
                 {
                     Lib.StartBootloader();
+                }
+                else if (command.ToUpper().StartsWith("V+") || command.ToUpper().StartsWith("V-"))
+                {
+                    int step = 1;
+
+                    string strStep = new String(command.Substring(2).SkipWhile(p => !Char.IsDigit(p)).ToArray());
+                    if (strStep.Length > 0)
+                        step = Convert.ToInt32(strStep) * 2;
+
+                    step = Math.Min(step, 100);
+
+                    for (int i = 0; i < step; i++)
+                    {
+                        if (command[1] == '+')
+                            Lib.VolumeUp(true);
+                        else
+                            Lib.VolumeDown(true);
+                    }
                 }
                 else if (splitCommand[0] == "lang")
                 {
